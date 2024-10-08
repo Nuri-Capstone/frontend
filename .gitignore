@@ -1,0 +1,75 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# MacOS
+*.DS_Store
+
+# Xcode
+ios/Pods/
+ios/Podfile.lock
+ios/build/
+ios/*.xcworkspace
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/xcshareddata/xcschemes/*
+!ios/*.xcodeproj/xcshareddata/xcschemes/xcscheme.yml
+*.hmap
+*.ipa
+*.xcuserstate
+
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/.idea/
+android/*/build/
+android/*.iml
+
+# React Native Packager
+/ios/main.jsbundle
+*.pack
+__generated__/
+
+# Miscellaneous
+.expo/
+.expo-shared/
+*.log
+*.lock
+*.tmp
+*.swp
+*.swo
+*.err
+*.orig
+*.patch
+*.rej
+*.sublime-workspace
+
+# Testing
+coverage/
+
+# Build files
+build/
+*.iml
+*.apk
+*.apks
+*.jks
+*.keystore
+.idea/
+.vscode/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/**/*.log
+fastlane/test_output/**/*.xml
+
+# CodePush
+CodePush/
+
+# VSCode
+.vscode/
