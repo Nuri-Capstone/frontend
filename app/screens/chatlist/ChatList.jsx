@@ -41,7 +41,7 @@ const StyledView = Styled.View`
 `;
 
 const StyledConversations = Styled.Text`
-    padding-top: 24px;
+    padding-top: 15px;
     padding-left: 32px;
     position: relative;
     font-family: 'Pretendard-Medium';
@@ -53,7 +53,7 @@ const StyledConversations = Styled.Text`
 `;
 
 const StyledFlatList = Styled(FlatList)`
-    margin: 13px 20px 5px 20px;
+    margin: 13px 20px 10px 20px;
     padding: 14px 18px;
     position: relative;
     border-width: 1px;
