@@ -1,19 +1,19 @@
 import React from "react";
-import { Text, Image } from 'react-native';
+import { Image } from 'react-native';
 import Styled from 'styled-components';
 
-function ConversationList(){
+function ConversationList({chat}){
     return(
         <>
             <StyledDateText>
-                2024.09.27
+                {chat.date}
             </StyledDateText>
             <StyledTalkDiv>
                 <StyledTalkImage>
                     <Image source={require('../assets/images/talkImage.png')}/>
                 </StyledTalkImage>
                 <StyledTalkTopicDiv>
-                    <StyledSummaryText>한국의 문화에 대한 이야기</StyledSummaryText>
+                    <StyledSummaryText>{chat.subject}</StyledSummaryText>
                 </StyledTalkTopicDiv>
             </StyledTalkDiv>
         </>

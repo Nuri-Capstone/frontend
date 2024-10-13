@@ -1,24 +1,29 @@
 import React from "react";
-import { Text, Dimensions, Image } from 'react-native';
+import { Dimensions, Image, FlatList } from 'react-native';
 import Styled from 'styled-components';
 import ConversationList from "../../components/ConversationList";
+import { chatListData } from "../../mock-data/chatListData";
 
 function ChatList(){
     const { height, width } = Dimensions.get('window');
+    const flatListHeight = height * 0.58;
+
     return (
         <>
             <StyledView>
                 <StyledConversations>Conversations</StyledConversations>
-                <StyledViewList dynamicHeight={height * 0.65}>
-                    <ConversationList/>
-                    <StyledConversationLine/>
-                    <ConversationList/>
-                    <StyledConversationLine/>
-                    <ConversationList/>
-                    <StyledConversationLine/>
-                    <ConversationList/>
-                    <StyledConversationLine/>
-                </StyledViewList>
+                    <StyledFlatList
+                        data={chatListData} // chatListData를 데이터로 사용
+                        keyExtractor={(chat) => chat.chatID.toString()} // 각 아이템의 고유한 key
+                        renderItem={({ item, index }) => (
+                            <React.Fragment>
+                                <ConversationList chat={item} />
+                                {index < chatListData.length - 1 && <StyledConversationLine />}
+                            </React.Fragment>
+                        )}
+                        contentContainerStyle={{ paddingBottom: 24 }}
+                        dynamicHeight={flatListHeight}
+                    />
                 <StyledAddButton>
                     <Image source={require('../../assets/images/addButton.png')}/>
                 </StyledAddButton>
@@ -47,15 +52,16 @@ const StyledConversations = Styled.Text`
     color: #000000;
 `;
 
-const StyledViewList = Styled.View`
-    margin: 13px 20px 13px 20px;
+const StyledFlatList = Styled(FlatList)`
+    margin: 13px 20px 5px 20px;
     padding: 14px 18px;
     position: relative;
-    border: 1px;
+    border-width: 1px;
     border-radius: 10px;
     border-color: #B9B7B7;
     width: 90%;
-    height: ${props => `${props.dynamicHeight}px`};
+    flex-grow: 1;
+    height: ${props => `${props.dynamicHeight}px`}; 
 `;
 
 const StyledConversationLine = Styled.View`
