@@ -6,6 +6,7 @@ import Splash from './screens/splash/Splash';
 import AuthStack from './screens/auth/AuthStack';
 import 'react-native-gesture-handler';
 import MainTab from './utils/MainTab';
+import Chat from './screens/chat/Chat';
 
 const Stack = createStackNavigator();
 
@@ -37,6 +38,7 @@ function App(){
           <Stack.Screen name="Splash" component={Splash}/>
           <Stack.Screen name="AuthStack" component={AuthStack} />
           <Stack.Screen name="MainTab" component={MainTab} />
+          <Stack.Screen name="Chat" component={Chat} />
       </Stack.Navigator>
     </NavigationContainer>
   );

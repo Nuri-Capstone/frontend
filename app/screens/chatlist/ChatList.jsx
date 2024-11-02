@@ -1,12 +1,20 @@
 import React from "react";
-import { Dimensions, Image, FlatList } from 'react-native';
+import { Dimensions, Image, FlatList, TouchableOpacity } from 'react-native';
 import Styled from 'styled-components';
 import ConversationList from "../../components/ConversationList";
 import { chatListData } from "../../mock-data/chatListData";
 
+import { useNavigation } from '@react-navigation/native'; // 네비게이션 훅 추가
+
+
 function ChatList(){
     const { height, width } = Dimensions.get('window');
     const flatListHeight = height * 0.58;
+    const navigation = useNavigation(); // 네비게이션 훅 사용
+
+    const startNewChat = () => {
+        navigation.navigate('Chat'); // 채팅 화면으로 이동
+    };
 
     return (
         <>
@@ -25,7 +33,9 @@ function ChatList(){
                         dynamicHeight={flatListHeight}
                     />
                 <StyledAddButton>
-                    <Image source={require('../../assets/images/addButton.png')}/>
+                    <TouchableOpacity onPress={startNewChat}>
+                    <Image source={require('../../assets/images/addButton.png')} />
+                    </TouchableOpacity> 
                 </StyledAddButton>
             </StyledView>
         </>
