@@ -4,16 +4,48 @@ import Styled from "styled-components";
 import MessageContainer from "../../components/MessageContainer";
 import FeedbackContainer from "../../components/FeedbackContainer";
 import { chatData } from "../../mock-data/chatData";
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+
+const audioRecorderPlayer = new AudioRecorderPlayer();
 
 // WebSocket 주소 (스프링 부트 서버의 WebSocket 엔드포인트 URL)
-const WEBSOCKET_URL = "ws://10.0.2.2:8080/ws/chat";
+const WEBSOCKET_URL = "ws://localhost:8080/ws/chat";
 
 function Chat() {
   const ws = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState(chatData);
   const [chatId, setChatId] = useState(null);// 채팅 아이디 상태
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedFilePath, setRecordedFilePath] = useState(null);
 
+  const startRecording = async () => {
+    setIsRecording(true);
+    const result = await audioRecorderPlayer.startRecorder();
+    setRecordedFilePath(result);
+  };
+
+   const stopRecording = async () => {
+    const result = await audioRecorderPlayer.stopRecorder();
+    setIsRecording(false);
+    setRecordedFilePath(result); // 녹음된 파일 경로 저장
+    sendRecordingToServer(result); // 서버로 파일 전송
+  };
+
+
+  const sendRecordingToServer = async (filePath) => {
+    // 파일을 Blob으로 변환 후 전송
+    const response = await fetch(filePath);
+    const blob = await response.blob();
+
+    if (ws.current && isConnected) {
+      ws.current.send(blob); // Blob 형태로 WebSocket 전송
+    } else {
+      console.error("WebSocket이 연결되어 있지 않습니다.");
+    }
+  };
+
+  
   useEffect(() => {
     ws.current = new WebSocket(WEBSOCKET_URL);
 
@@ -79,10 +111,15 @@ function Chat() {
       </StyledEndButton>
 
       <StyledMicButton>
-        <TouchableOpacity onPress={() => sendMessage("클라이언트 메세지!")}> 
+        <TouchableOpacity 
+            onPressIn={startRecording}
+            onPressOut={stopRecording}
+        > 
         <Image source={require('../../assets/images/micButton.png')} style={{ width: 66, height: 66 }}/>
         </TouchableOpacity>
       </StyledMicButton>
+
+      {isRecording && <RecordingIndicator>녹음 중...</RecordingIndicator>}
     </StyledView>
   );
 }
@@ -137,4 +174,12 @@ const StyledMicButton = Styled.View`
   position: absolute;
   bottom: 34px;
   right: 25px;
+`;
+
+const RecordingIndicator = Styled.Text`
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  color: red;
+  font-size: 16px;
 `;
