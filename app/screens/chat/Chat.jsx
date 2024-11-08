@@ -9,12 +9,12 @@ import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 // WebSocket 주소 (스프링 부트 서버의 WebSocket 엔드포인트 URL)
-const WEBSOCKET_URL = "ws://localhost:8080/ws/chat";
+const WEBSOCKET_URL = "ws://10.0.2.2:8080/ws/voice";
 
 function Chat() {
   const ws = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [messages, setMessages] = useState(chatData);
+  const [messages, setMessages] = useState([]);
   const [chatId, setChatId] = useState(null);// 채팅 아이디 상태
   const [isRecording, setIsRecording] = useState(false);
   const [recordedFilePath, setRecordedFilePath] = useState(null);
@@ -27,6 +27,7 @@ function Chat() {
 
    const stopRecording = async () => {
     const result = await audioRecorderPlayer.stopRecorder();
+    console.log(result);
     setIsRecording(false);
     setRecordedFilePath(result); // 녹음된 파일 경로 저장
     sendRecordingToServer(result); // 서버로 파일 전송
@@ -34,59 +35,55 @@ function Chat() {
 
 
   const sendRecordingToServer = async (filePath) => {
-    // 파일을 Blob으로 변환 후 전송
-    const response = await fetch(filePath);
-    const blob = await response.blob();
-
-    if (ws.current && isConnected) {
-      ws.current.send(blob); // Blob 형태로 WebSocket 전송
-    } else {
-      console.error("WebSocket이 연결되어 있지 않습니다.");
+    try {
+        const response = await fetch(filePath);
+        const blob = await response.blob(); // Blob 객체 생성
+        if (ws.current && isConnected) {
+            ws.current.send(blob); // Blob을 WebSocket으로 전송
+            console.log("오디오 데이터 전송 완료");
+        } else {
+            console.error("WebSocket이 연결되어 있지 않습니다.");
+        }
+    } catch (error) {
+        console.error("오디오 파일을 읽는 중 오류 발생:", error);
     }
-  };
+};
 
-  
+
   useEffect(() => {
     ws.current = new WebSocket(WEBSOCKET_URL);
-
     ws.current.onopen = () => {
-      console.log("WebSocket connection opened");
       setIsConnected(true);
+      console.log("WebSocket 연결됨");
     };
-
     ws.current.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      console.log("Received:", message);
-      // 채팅방 아이디 설정
-      if (!chatId && message.chatId) {
-        setChatId(message.chatId); // 채팅 아이디 저장
-      }
-      // 새 메시지를 기존 메시지에 추가하여 상태 업데이트
-      setMessages((prevMessages) => [...prevMessages, message]);
-    };
+        if (event.data instanceof ArrayBuffer) {
+            const audioData = new Uint8Array(event.data);
+            console.log("Received audio data:", audioData);
+        } else {
+            try {
+                const message = JSON.parse(event.data);
+                console.log("Received:", message);
+                setMessages((prevMessages)=>[
+                  ...prevMessages,
+                  {
+                    id: message.chatId,
+                    msgText: message.msgText,
+                    msgType: "user"
+                  }
+                ]);
 
-    ws.current.onclose = (event) => {
-      console.log("WebSocket connection closed", event);
-      setIsConnected(false);
+            } catch (e) {
+                console.error("Error parsing JSON:", e);
+            }
+        }
     };
-
+    ws.current.onclose = () => setIsConnected(false);
     ws.current.onerror = (error) => {
       console.error("WebSocket error:", error);
     };
-
-    return () => {
-      if (ws.current) ws.current.close();
-    };
+    return () => ws.current.close();
   }, []);
-
-  const sendMessage = (text) => {
-    if (ws.current && isConnected) {
-      const message = { chatId: chatId, msgText: text, msgType: "user" };
-      ws.current.send(JSON.stringify(message));
-    } else {
-      console.error("!!!!! WebSocket is not connected !!!!!");
-    }
-  };
 
   return (
     <StyledView>
@@ -96,12 +93,13 @@ function Chat() {
         <MessageBox>
             <GPTText>안녕하세요! 오늘은 어떤 주제를 얘기할까요?</GPTText>
         </MessageBox>
-        
-        {/* {messages.map((item, index) => (
+
+        {messages.length > 0 && messages.map((item, index) => (
           <React.Fragment key={index}>
             <MessageContainer chat={item} />
           </React.Fragment>
-        ))} */}
+        ))}
+
       </ChatSection>
 
       <StyledEndButton>
