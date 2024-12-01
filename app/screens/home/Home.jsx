@@ -1,12 +1,14 @@
-import React, { useState } from "react";
-import Styled from 'styled-components';
+import React, { useState, useEffect } from "react";
+import Styled, { keyframes } from 'styled-components';
 import RNPickerSelect from "react-native-picker-select";
+import { ScrollView } from 'react-native';
 import Swiper from 'react-native-swiper';
-import { feedbackData, defaultFeedback} from "../../mock-data/monthlyFeedbackData";
+import {defaultFeedback} from "../../mock-data/monthlyFeedbackData";
 
 function Home(){
     const [selectedYear, setSelectedYear] = useState(2024);
     const [selectedMonth, setSelectedMonth] = useState(10);
+    const [currentFeedback, setCurrentFeedback] = useState(defaultFeedback);
 
     const years = Array.from({ length: 27 }, (_, index) => {
         const year = 2024 + index;
@@ -28,9 +30,34 @@ function Home(){
         { label: "12월", value: 12 },
     ];
 
-    // 선택된 년도와 월에 해당하는 피드백 데이터를 불러오거나, 없으면 기본 피드백 데이터 사용
-    const currentFeedback = feedbackData[selectedYear]?.[selectedMonth] || defaultFeedback;
-    
+    const fetchMonthlyFeedback = async (year, month) => {
+        try {
+            const userId = 195;       // 이후 실제 userID로 넣어야 함
+            console.log("userId: " + userId);
+            console.log("month: " + month);
+            const response = await fetch(`http://10.0.2.2:8080/home/monthlyFeedback/${userId}/${year}/${month}`);
+
+            console.log(response);
+            const data = await response.json();
+            console.log(data);
+
+            const responseFeedback = [
+                {title: "문법 피드백", content: data.grammar.content},
+                {title: "어휘 피드백", content: data.vocabulary.content},
+                // {title: "연령별 대화 피드백", content: data.ageInGroup.content},
+                {title: "경어체 피드백", content: data.formalInformal.content},
+            ]
+
+            setCurrentFeedback(responseFeedback);
+        } catch (error) {
+            console.error("데이터 가져오기 실패: ", error);
+            setCurrentFeedback(defaultFeedback);
+        }
+    };
+
+    useEffect(() => {
+        fetchMonthlyFeedback(selectedYear, selectedMonth);
+    }, [selectedYear, selectedMonth]);
 
 
     return (
@@ -80,10 +107,12 @@ function Home(){
                         paginationStyle={{ top : -150 }}
                     >
                         {currentFeedback.map((feedback, index) => (
-                            <StyledFeedbackCard key={index}>
+                            <ScrollView key={index} style={{ flex: 1 }}>
+                                <StyledFeedbackCard key={index}>
                                 <StyledSummaryTitle>{index + 1}. {feedback.title}</StyledSummaryTitle>
                                 <StyledSummaryContent>{feedback.content}</StyledSummaryContent>
                             </StyledFeedbackCard>
+                            </ScrollView>
                         ))}
                     </Swiper>
                 </StyledSwiperContainer>
