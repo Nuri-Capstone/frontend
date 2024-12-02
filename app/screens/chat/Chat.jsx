@@ -18,6 +18,8 @@ function Chat() {
   const [chatId, setChatId] = useState(null);// 채팅 아이디 상태
   const [isRecording, setIsRecording] = useState(false);
   const [recordedFilePath, setRecordedFilePath] = useState(null);
+  const [showEndButton, setShowEndButton] = useState(true);
+  const [showSummary, setShowSummary] = useState(false);
 
   const startRecording = async () => {
     setIsRecording(true);
@@ -46,6 +48,31 @@ function Chat() {
         }
     } catch (error) {
         console.error("오디오 파일을 읽는 중 오류 발생:", error);
+    }
+  };
+
+  // summary 전송
+  const fetchSummary = async () => {
+
+  };
+  
+  // 채팅 종료
+  const endChat = async () => {
+    try {
+      if (isConnected) {
+        //await fetchSummary();
+        setShowEndButton(false);
+        setShowSummary(true); // 후에 삭제           
+      }
+
+      if (ws.current && isConnected) {
+        ws.current.close();
+        setIsConnected(false);
+        console.log("채팅과 웹소켓 연결 종료");
+      }
+
+    } catch (error) {
+      console.log("종료 중 에러 발생:", error);
     }
   };
 
@@ -115,11 +142,13 @@ function Chat() {
         </ScrollView>
       </ChatSection>
 
-      <StyledEndButton>
-        <TouchableOpacity>
-        <Image source={require('../../assets/images/endButton.png')} style={{ width: 70, height: 40 }}/>
-        </TouchableOpacity>
-      </StyledEndButton>
+      {showEndButton && (
+        <StyledEndButton>
+          <TouchableOpacity onPress={endChat}>
+          <Image source={require('../../assets/images/endButton.png')} style={{ width: 70, height: 40 }}/>
+          </TouchableOpacity>
+        </StyledEndButton>
+      )}
 
       <StyledMicButton>
         <TouchableOpacity 
