@@ -3,23 +3,26 @@ import { View, Image } from "react-native";
 import Styled from "styled-components";
 import FeedbackContainer from "../components/FeedbackContainer";
 
-function MessageContainer({ chat = {} }) { 
-  const { msgType, msgText } = chat;
+function MessageContainer({ chat, ws }) { 
+  const { msgType, msgText, msgId } = chat;
 
   return (
     <Container>
       {msgType === "user" ? (
         <MessageContainers>
+          <ImageAndTextSection>
             <ProfileImage source={require('../assets/images/userImg.png')} />
-
             <MessageContentUser>
                 <UserTextBox>
                     <UserText>{msgText}</UserText>
                 </UserTextBox>
-
-                <FeedbackContainer />
             </MessageContentUser>
-
+          </ImageAndTextSection>
+          
+          <ButtonSection>
+            <FeedbackContainer msgText={msgText} msgId={msgId} ws={ws}/>
+          </ButtonSection>
+        
         </MessageContainers>
       ) : (
         <MessageContentGPT>
@@ -32,12 +35,18 @@ function MessageContainer({ chat = {} }) {
 
 export default MessageContainer;
 
-const MessageContainers = Styled.View`
+
+const ImageAndTextSection = Styled.View`
   flex-direction: row-reverse; 
   align-items: center;
-  margin-bottom: 10px; 
-  border-radius: 10px;
-  margin-bottom: 5px;
+`;
+const ButtonSection = Styled.View`
+  flex-direction: row-reverse; 
+  margin-right: 35px;
+`;
+
+const MessageContainers = Styled.View`
+  flex-direction: column;
 `;
 
 const MessageContentUser = Styled.View`
@@ -51,12 +60,12 @@ const UserTextBox = Styled.View`
   padding: 10px;
   max-width: 260px;
   border-radius: 10px;
-  margin-bottom: 5px; /* Add space between the message and buttons */
+  margin-bottom: 5px;
 `;
 
 const UserText = Styled.Text`
-    color: black;
-    font-size: 16px;
+  color: black;
+  font-size: 16px;
 `;
 
 const ProfileImage = Styled.Image`
@@ -84,7 +93,3 @@ const GptText = Styled.Text`
 const Container = Styled.View`
   margin-bottom: 5px;
 `;
-
-
-
-
