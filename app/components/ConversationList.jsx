@@ -3,10 +3,12 @@ import { Image } from 'react-native';
 import Styled from 'styled-components';
 
 function ConversationList({chat}){
+    const formattedDate = new Date(chat.date).toISOString().split("T")[0];
+
     return(
         <>
             <StyledDateText>
-                {chat.date}
+                {formattedDate}
             </StyledDateText>
             <StyledTalkDiv>
                 <StyledTalkImage>
