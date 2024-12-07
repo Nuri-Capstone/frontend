@@ -7,6 +7,7 @@ import AuthStack from './screens/auth/AuthStack';
 import 'react-native-gesture-handler';
 import MainTab from './utils/MainTab';
 import Chat from './screens/chat/Chat';
+import ChatHistory from './screens/chat/ChatHistory';
 
 const Stack = createStackNavigator();
 
@@ -39,6 +40,7 @@ function App(){
           <Stack.Screen name="AuthStack" component={AuthStack} />
           <Stack.Screen name="MainTab" component={MainTab} />
           <Stack.Screen name="Chat" component={Chat} />
+          <Stack.Screen name="ChatHistory" component={ChatHistory} />
       </Stack.Navigator>
     </NavigationContainer>
   );
