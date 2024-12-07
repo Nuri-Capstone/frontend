@@ -7,6 +7,7 @@ import { chatData } from "../../mock-data/chatData";
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import SoundPlayer from 'react-native-sound-player';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
@@ -22,7 +23,14 @@ function Chat() {
   const [recordedFilePath, setRecordedFilePath] = useState(null);
   const [showEndButton, setShowEndButton] = useState(true);
   const [showSummary, setShowSummary] = useState(false);
+  const [summary, setSummary] = useState(null);
   const [token, setToken] = useState(null);
+  const [showMicButton, setShowMicButton] = useState(true);
+
+  const [newChat, setNewChat] = useState(false);
+
+  const navigation = useNavigation();
+  const route = useRoute();
 
   const startRecording = async () => {
     setIsRecording(true);
@@ -79,90 +87,98 @@ function Chat() {
 
   // summary 전송
   const fetchSummary = async () => {
-
+    console.log(chatId);
+    const response = await fetch(`http://10.0.2.2:8080/api/msg/summary/${chatId}`);
+    const data = await response.json();
+    console.log(data);
+    setSummary(data.summary);
+    console.log(data);
   };
   
   // 채팅 종료
   const endChat = async () => {
-    try {
-      if (isConnected) {
-        //await fetchSummary();
-        setShowEndButton(false);
-        setShowSummary(true); // 후에 삭제           
-      }
-
-      if (ws.current && isConnected) {
-        ws.current.close();
-        setIsConnected(false);
-        console.log("채팅과 웹소켓 연결 종료");
-      }
-
-    } catch (error) {
-      console.log("종료 중 에러 발생:", error);
+    if (isConnected) {
+      await fetchSummary();
+      ws.current.close();
+      setIsConnected(false);
+      setShowEndButton(false);
+      setShowMicButton(false);
+      setShowSummary(true); // 후에 삭제
+      //setNewChat(false); 
+      console.log("채팅과 웹소켓 연결 종료");    
     }
   };
 
-  useEffect(() => {
-    const fetchToken = async () => {
-      const realToken = await AsyncStorage.getItem('userToken');
-      if(realToken){
-        let newToken  = 'Bearer ' + realToken;
-        setToken(newToken);
-      } else{
-        console.error('토큰이 없습니다. 로그인하세요.');
+  const resetChat = () => {
+    setMessages([]);
+    setShowEndButton(true);
+    setShowMicButton(true);
+    setShowSummary(false);
+    setChatId(null);
+    setNewChat(false); // 새 채팅 상태 초기화
+    navigation.setParams({ newChat: false }); // route.params 초기화
+  };
+
+  // 토큰을 가져와서 상태에 저장
+  const fetchToken = async () => {
+    const realToken = await AsyncStorage.getItem('userToken');
+    if (realToken) {
+      let newToken = 'Bearer ' + realToken;
+      setToken(newToken);
+    } else {
+      console.error('토큰이 없습니다. 로그인하세요.');
+    }
+  };
+
+  // WebSocket 초기화 및 연결
+  const initializeWebSocket = () => {
+    if (ws.current) {
+      ws.current.close(); // 기존 연결 닫기
+    }
+
+    ws.current = new WebSocket(WEBSOCKET_URL, [token]);
+    ws.current.onopen = () => {
+      setIsConnected(true);
+      console.log("WebSocket 연결됨");
+    };
+    ws.current.onmessage = async (event) => {
+      const message = JSON.parse(event.data);
+      if (message.type === "INITIAL") {
+        setChatId(message.chatId);
+        console.log("새채팅 아이디: ", message.chatId);
+      } else if (message.audioUrl) {  // S3 URL이 포함된 경우 재생 시작
+        console.log("Received S3 URL:", message.audioUrl);
+        await playAudioFromS3(message.audioUrl);
+      } else {
+        setMessages((prevMessages) => [...prevMessages, message]);
       }
     };
+    ws.current.onclose = () => setIsConnected(false);
+    ws.current.onerror = (error) => console.error("WebSocket error:", error);
+  };
 
+
+  // newChat 상태 처리
+  useEffect(() => {
+    if (route.params?.newChat) {
+      console.log("새 채팅 시작");
+      resetChat();
+      initializeWebSocket(); // WebSocket 재연결
+      navigation.setParams({ newChat: false }); // newChat 상태 초기화
+    }
+  }, [route.params?.newChat]);
+
+  // 토큰이 변경될 때 WebSocket 연결
+  useEffect(() => {
+    if (token) {
+      initializeWebSocket();
+    }
+  }, [token]);
+
+  // 페이지 로드 시 토큰 가져오기
+  useEffect(() => {
     fetchToken();
-    if(token){
-      ws.current = new WebSocket(WEBSOCKET_URL,[token]);
-    }
-    else{
-      console.log('로그인하세요');
-    }
-  
-    if (ws.current) {
-      ws.current.onopen = () => {
-        setIsConnected(true);
-        console.log('WebSocket 연결됨');
-      };
-      ws.current.onmessage = async (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          console.log("Received:", message);
-          if (message.audioUrl) {
-            // S3 URL이 포함된 경우 재생 시작
-            console.log("Received S3 URL:", message.audioUrl);
-            await playAudioFromS3(message.audioUrl);
-          } else if(message.message){
-            console.log(message.message);
-          }
-          else {
-            setMessages((prevMessages) => [
-              ...prevMessages,
-              {
-                chatId: message.chatId,
-                msgText: message.msgText,
-                msgType: message.msgType,
-                msgId: message.msgId
-              },
-            ]);
-          }
-        } catch (e) {
-          console.error("Error parsing JSON:", e);
-        }
-      };
-      
-      ws.current.onclose = () => setIsConnected(false);
-      ws.current.onerror = (error) => {
-        console.error("WebSocket error:", error);
-      };
-      return () => ws.current.close();
-    } else {
-      console.log("WebSocket 객체가 null입니다. 초기화가 필요합니다.");
-    }
-  },[token]);
-
+  }, []);
 
   return (
     <StyledView>
@@ -185,7 +201,7 @@ function Chat() {
             <SummaryTitle>Summary</SummaryTitle>
             <SummaryBox>
               <SummaryContent>
-                한국의 문화에 대한 이야기
+                {summary}
               </SummaryContent>
             </SummaryBox>
           </SummarySection>
@@ -201,14 +217,16 @@ function Chat() {
         </StyledEndButton>
       )}
 
-      <StyledMicButton>
-        <TouchableOpacity 
-            onPressIn={startRecording}
-            onPressOut={stopRecording}
-        > 
-        <Image source={require('../../assets/images/micButton.png')} style={{ width: 66, height: 66 }}/>
-        </TouchableOpacity>
-      </StyledMicButton>
+      {showMicButton && (
+        <StyledMicButton>
+          <TouchableOpacity 
+              onPressIn={startRecording}
+              onPressOut={stopRecording}
+          > 
+          <Image source={require('../../assets/images/micButton.png')} style={{ width: 66, height: 66 }}/>
+          </TouchableOpacity>
+        </StyledMicButton>
+      )}
 
       {isRecording && <RecordingIndicator>녹음 중...</RecordingIndicator>}
     </StyledView>

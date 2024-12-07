@@ -12,9 +12,9 @@ function ChatList(){
     const [chatListData, setChatListData] = useState([]);
 
     const startNewChat = () => {
-        navigation.navigate('Chat');
+        navigation.navigate("Chat", { newChat: true });
     };
-    
+
     const showChatHistory = ( chatId, subject, summary ) => {
         navigation.navigate('ChatHistory', { chatId, subject, summary });
     };
