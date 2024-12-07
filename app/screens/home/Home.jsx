@@ -159,7 +159,8 @@ const StyledSummaryMonth = Styled.Text`
 `;
 
 const StyledSwiperContainer = Styled.View`
-    height: 250px;
+    flex: 1;
+    min-height: 250px;
 `;
 
 const StyledFeedbackCard = Styled.View`
@@ -167,8 +168,8 @@ const StyledFeedbackCard = Styled.View`
     background-color: #f0f0f0;
     border-radius: 10px;
     margin: 10px;
-    height: 350px;
-    justify-content: flex-start
+    
+    justify-content: flex-start;
 `;
 
 const StyledSummaryTitle = Styled.Text`
