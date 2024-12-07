@@ -22,6 +22,7 @@ function Chat() {
   const [recordedFilePath, setRecordedFilePath] = useState(null);
   const [showEndButton, setShowEndButton] = useState(true);
   const [showSummary, setShowSummary] = useState(false);
+  const [summary, setSummary] = useState(null);
   const [token, setToken] = useState(null);
 
   const startRecording = async () => {
@@ -79,14 +80,15 @@ function Chat() {
 
   // summary 전송
   const fetchSummary = async () => {
-
+    const response = await fetch(`http://10.0.2.2:8080/api/msg/summary/${chatId}`);
+    const data = await response.json();
   };
   
   // 채팅 종료
   const endChat = async () => {
     try {
       if (isConnected) {
-        //await fetchSummary();
+        // await fetchSummary(chatId);
         setShowEndButton(false);
         setShowSummary(true); // 후에 삭제           
       }
@@ -185,7 +187,7 @@ function Chat() {
             <SummaryTitle>Summary</SummaryTitle>
             <SummaryBox>
               <SummaryContent>
-                한국의 문화에 대한 이야기
+                {summary}
               </SummaryContent>
             </SummaryBox>
           </SummarySection>

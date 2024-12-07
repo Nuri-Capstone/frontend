@@ -15,7 +15,7 @@ function ConversationList({chat}){
                     <Image source={require('../assets/images/talkImage.png')}/>
                 </StyledTalkImage>
                 <StyledTalkTopicDiv>
-                    <StyledSummaryText>{chat.subject}</StyledSummaryText>
+                    <StyledSummaryText>{chat.summary}</StyledSummaryText>
                 </StyledTalkTopicDiv>
             </StyledTalkDiv>
         </>
