@@ -5,10 +5,13 @@ import MessageContainer from "../../components/MessageContainer";
 import FeedbackContainer from "../../components/FeedbackContainer";
 import { chatData } from "../../mock-data/chatData";
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import SoundPlayer from 'react-native-sound-player';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 // WebSocket 주소 (스프링 부트 서버의 WebSocket 엔드포인트 URL)
+
 const WEBSOCKET_URL = "ws://10.0.2.2:8080/ws/voice";
 
 function Chat() {
@@ -20,21 +23,45 @@ function Chat() {
   const [recordedFilePath, setRecordedFilePath] = useState(null);
   const [showEndButton, setShowEndButton] = useState(true);
   const [showSummary, setShowSummary] = useState(false);
+  const [token, setToken] = useState(null);
 
   const startRecording = async () => {
     setIsRecording(true);
-    const result = await audioRecorderPlayer.startRecorder();
-    setRecordedFilePath(result);
+    try {
+      SoundPlayer.stop(); // 녹음 전에 모든 재생 중지
+      const result = await audioRecorderPlayer.startRecorder();
+      setRecordedFilePath(result);
+      console.log("녹음 시작:", result);
+    } catch (error) {
+      console.error("녹음 시작 중 오류 발생:", error);
+    }
   };
 
-   const stopRecording = async () => {
-    const result = await audioRecorderPlayer.stopRecorder();
-    console.log(result);
-    setIsRecording(false);
-    setRecordedFilePath(result); // 녹음된 파일 경로 저장
-    sendRecordingToServer(result); // 서버로 파일 전송
+  const stopRecording = async () => {
+    try {
+      const result = await audioRecorderPlayer.stopRecorder();
+      setIsRecording(false);
+      setRecordedFilePath(result); // 녹음된 파일 경로 저장
+      console.log("녹음 중지:", result);
+      sendRecordingToServer(result); // 서버로 파일 전송
+    } catch (error) {
+      console.error("녹음 중지 중 오류 발생:", error);
+    }
   };
 
+  const playAudioFromS3 = async (s3Url) => {
+    console.log("playAudioFromS3 호출됨, URL:", s3Url);
+    if (isRecording) {
+      console.log("현재 녹음 중이므로 재생할 수 없습니다.");
+      return;
+    }
+    try {
+      SoundPlayer.stop(); // 기존 재생 중인 오디오 중지
+      SoundPlayer.playUrl(s3Url);
+    } catch (error) {
+      console.error("S3에서 오디오 파일을 가져오는 중 오류 발생:", error);
+    }
+  };
 
   const sendRecordingToServer = async (filePath) => {
     try {
@@ -49,7 +76,7 @@ function Chat() {
     } catch (error) {
         console.error("오디오 파일을 읽는 중 오류 발생:", error);
     }
-  };
+};
 
   // summary 전송
   const fetchSummary = async () => {
@@ -77,44 +104,68 @@ function Chat() {
   };
 
   useEffect(() => {
-    ws.current = new WebSocket(WEBSOCKET_URL);
-    ws.current.onopen = () => {
-      setIsConnected(true);
-      console.log("WebSocket 연결됨");
+    const fetchToken = async () => {
+      const realToken = await AsyncStorage.getItem('userToken');
+      if(realToken){
+        let newToken  = 'Bearer ' + realToken;
+        setToken(newToken);
+      } else{
+        console.error('토큰이 없습니다. 로그인하세요.');
+      }
     };
-    ws.current.onmessage = (event) => {
-        if (event.data instanceof ArrayBuffer) {
-            const audioData = new Uint8Array(event.data);
-            console.log("Received audio data:", audioData);
-        } else {
-            try {
-                const message = JSON.parse(event.data);
-                console.log("Received:", message);
-                setMessages((prevMessages)=>[
-                  ...prevMessages,
-                  {
-                    chatId: message.chatId,
-                    msgText: message.msgText,
-                    msgType: message.msgType,
-                    msgId: message.id
-                  }
-                ]);
 
-            } catch (e) {
-                console.error("Error parsing JSON:", e);
-            }
+    fetchToken();
+    if(token){
+      ws.current = new WebSocket(WEBSOCKET_URL,[token]);
+    }
+    else{
+      console.log('로그인하세요');
+    }
+  
+    if (ws.current) {
+      ws.current.onopen = () => {
+        setIsConnected(true);
+        console.log('WebSocket 연결됨');
+      };
+      ws.current.onmessage = async (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          console.log("Received:", message);
+          if (message.audioUrl) {
+            // S3 URL이 포함된 경우 재생 시작
+            console.log("Received S3 URL:", message.audioUrl);
+            await playAudioFromS3(message.audioUrl);
+          } else if(message.message){
+            console.log(message.message);
+          }
+          else {
+            setMessages((prevMessages) => [
+              ...prevMessages,
+              {
+                chatId: message.chatId,
+                msgText: message.msgText,
+                msgType: message.msgType,
+                msgId: message.msgId
+              },
+            ]);
+          }
+        } catch (e) {
+          console.error("Error parsing JSON:", e);
         }
-    };
-    ws.current.onclose = () => setIsConnected(false);
-    ws.current.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-    return () => ws.current.close();
-  }, []);
+      };
+      
+      ws.current.onclose = () => setIsConnected(false);
+      ws.current.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+      return () => ws.current.close();
+    } else {
+      console.log("WebSocket 객체가 null입니다. 초기화가 필요합니다.");
+    }
+  },[token]);
 
   return (
     <StyledView>
-      
       <Header>Nuri</Header>
       
       <ChatSection>
@@ -165,6 +216,7 @@ function Chat() {
 }
 
 export default Chat;
+
 
 const StyledView = Styled.View`
   flex: 1;
@@ -222,7 +274,6 @@ const RecordingIndicator = Styled.Text`
   color: red;
   font-size: 16px;
 `;
-
 const SummarySection = Styled.View`
   border-top-width: 0.5px;
   border-top-color: #6E6E6E;
