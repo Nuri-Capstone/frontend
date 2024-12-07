@@ -5,10 +5,108 @@ import { ScrollView } from 'react-native';
 import Swiper from 'react-native-swiper';
 import {defaultFeedback} from "../../mock-data/monthlyFeedbackData";
 
+import { Dimensions } from "react-native";
+import { LineChart } from "react-native-chart-kit";
+
 function Home(){
+    const [userRanking, setUserRanking] = useState(null);
+    const [totalUsers, setTotalUsers] = useState(null);
     const [selectedYear, setSelectedYear] = useState(2024);
-    const [selectedMonth, setSelectedMonth] = useState(10);
+    const [selectedMonth, setSelectedMonth] = useState(12);
     const [currentFeedback, setCurrentFeedback] = useState(defaultFeedback);
+
+    const [msgCnt, setMsgCnt] = useState({
+        labels: [],
+        datasets: [
+            {
+                data: [0],
+                color: () => `rgba(252, 235, 175, 1)`,
+                strokeWidth: 1,
+            },
+        ],
+        legend: ["대화 수 랭킹"]
+    });
+
+    const fetchRanking = async () => {
+        const userId = 148;
+
+        const allUserResponse = await fetch('http://10.0.2.2:8080/home/ranking/allUsers', {
+            method: "GET",
+            headers: {
+                "Content-type" : "application/json",
+                "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM2NTIzMTB9.TELabgTVvWLVlY-NvZXVee4eRDEemYb-liva6D1FQeU`
+            },
+        });
+        const allUserData = await allUserResponse.json();
+
+        setTotalUsers(allUserData);
+
+        const userRankingResponse = await fetch(`http://10.0.2.2:8080/home/ranking/${userId}`, {
+            method: "GET",
+            headers: {
+                "Content-type" : "application/json",
+                "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM2NTIzMTB9.TELabgTVvWLVlY-NvZXVee4eRDEemYb-liva6D1FQeU`
+            },
+        });
+        const userRankingData = await userRankingResponse.json();
+        console.log("userRankingData" + userRankingData);
+
+        setUserRanking(userRankingData);
+    };
+
+    const fetchData = async () => {
+        try {
+            const userId = 148;
+            const response = await fetch(`http://10.0.2.2:8080/home/graph/${userId}`, {
+                method: "GET",
+                headers: {
+                    "Content-type" : "application/json",
+                    "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM2NTIzMTB9.TELabgTVvWLVlY-NvZXVee4eRDEemYb-liva6D1FQeU`
+                },
+            });
+            const data = await response.json();
+    
+            if (data && typeof data === "object") {
+                const date = [];
+                const numOfMessage = [];
+
+                Object.keys(data).forEach((key) => {
+                    // 날짜를 '23/12/01' 형식으로 변환
+                    const formattedDate = key
+                        .slice(2) // '2023-12-01' -> '23-12-01'
+                        .replace(/-/g, "/"); // '23-12-01' -> '23/12/01'
+                    date.push(formattedDate); // 변환된 날짜 추가
+                    numOfMessage.push(data[key]); // 메시지 개수 추가
+    
+                    console.log("formattedDate: " + formattedDate);
+                    console.log("numOfMessage: " + data[key]);
+                });
+                
+                setMsgCnt({
+                    labels: date,
+                    datasets: [
+                        {
+                            data: numOfMessage,
+                            color: () => `rgba(252, 235, 175, 1)`,
+                            strokeWidth: 1
+                        }
+                    ],
+                    legend: ["월별 대화"]
+                });
+
+                console.log("msgCnt.date " + msgCnt.date);
+                console.log("msgCnt.numOfMessage " + msgCnt.datasets[0].data);
+                
+            }
+            else {
+                console.error("올바르지 않은 데이터 형식:", data);
+            }
+        }
+        catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    };
+
 
     const years = Array.from({ length: 27 }, (_, index) => {
         const year = 2024 + index;
@@ -32,10 +130,16 @@ function Home(){
 
     const fetchMonthlyFeedback = async (year, month) => {
         try {
-            const userId = 195;       // 이후 실제 userID로 넣어야 함
+            const userId = 148;       // 이후 실제 userID로 넣어야 함
             console.log("userId: " + userId);
             console.log("month: " + month);
-            const response = await fetch(`http://10.0.2.2:8080/home/monthlyFeedback/${userId}/${year}/${month}`);
+            const response = await fetch(`http://10.0.2.2:8080/home/monthlyFeedback/${userId}/${year}/${month}`, {
+                method: "GET",
+                headers: {
+                    "Content-type" : "application/json",
+                    "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM2NTIzMTB9.TELabgTVvWLVlY-NvZXVee4eRDEemYb-liva6D1FQeU`
+                },
+            });
 
             console.log(response);
             const data = await response.json();
@@ -44,7 +148,6 @@ function Home(){
             const responseFeedback = [
                 {title: "문법 피드백", content: data.grammar.content},
                 {title: "어휘 피드백", content: data.vocabulary.content},
-                // {title: "연령별 대화 피드백", content: data.ageInGroup.content},
                 {title: "경어체 피드백", content: data.formalInformal.content},
             ]
 
@@ -56,22 +159,61 @@ function Home(){
     };
 
     useEffect(() => {
+        fetchRanking();
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    useEffect(() => {
         fetchMonthlyFeedback(selectedYear, selectedMonth);
     }, [selectedYear, selectedMonth]);
 
 
+    const screenWidth = Dimensions.get("window").width;
+
     return (
         <StyledView>
-
-
-
+            
+            <StyledProfileContainer>
+                <StyledProfileText>사용자 님의 순위는 {userRanking}/{totalUsers} 위입니다!{"\n"}아주 잘하고 있어요!</StyledProfileText>
+            </StyledProfileContainer>
 
             <StyledRanking>
+            <ScrollView horizontal={true} style={{ flexDirection: "row"}}>
+                <LineChart
+                    
+                    data={msgCnt}
+                    width={Math.max(screenWidth, msgCnt.labels.length * 70)}
+                    height={220}
+                    
+                    yAxisSuffix="개"
+                    yAxisInterval={10}
 
+                    chartConfig={{
+                        backgroundGradientFrom: "white",
+                        backgroundGradientFromOpacity: 1,
+                        backgroundGradientTo: "white",
+                        backgroundGradientToOpacity: 1,
+                        decimalPlaces: 0, // optional, defaults to 2dp
+                        fromZero: true,
+                        
+                        strokeWidth: 3,
+                        useShadowColorFromDataset: false,
+
+                        color: (opacity = 1) => `rgba(100, 55, 55, ${opacity})`,
+                    }}
+
+                    bezier
+                    style={{
+                    marginVertical: 8,
+                    borderRadius: 16
+                    }}/>
+                </ScrollView>
+            
             </StyledRanking>
-
-
-
+            
 
             <StyledSummary>
                 <StyledDatePickerRow>
@@ -127,6 +269,29 @@ const StyledView = Styled.View`
     flex: 1;
     background-color: #ffffff;
 `;
+
+const StyledProfileContainer = Styled.View`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+`;
+
+const StyledProfileImage = Styled.Image`
+    width: 50px;
+    height: 50px;
+    border-radius: 25px;
+    margin-right: 10px;
+    margin-left: 10px;
+`;
+
+const StyledProfileText = Styled.Text`
+    font-size: 24px;
+    font-weight: bold;
+    margin-right: 10px;
+`;
+
 
 
 const StyledRanking = Styled.View``;
