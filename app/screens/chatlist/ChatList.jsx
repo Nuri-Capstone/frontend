@@ -1,20 +1,37 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Dimensions, Image, FlatList, TouchableOpacity } from 'react-native';
 import Styled from 'styled-components';
 import ConversationList from "../../components/ConversationList";
-import { chatListData } from "../../mock-data/chatListData";
-
-import { useNavigation } from '@react-navigation/native'; // 네비게이션 훅 추가
+import { useNavigation } from '@react-navigation/native'; 
 
 
 function ChatList(){
     const { height, width } = Dimensions.get('window');
     const flatListHeight = height * 0.58;
-    const navigation = useNavigation(); // 네비게이션 훅 사용
+    const navigation = useNavigation(); 
+    const [chatListData, setChatListData] = useState([]);
 
     const startNewChat = () => {
-        navigation.navigate('Chat'); // 채팅 화면으로 이동
+        navigation.navigate('Chat');
     };
+    
+    const showChatHistory = ( chatId, subject, summary ) => {
+        navigation.navigate('ChatHistory', { chatId, subject, summary });
+    };
+
+    useEffect(() => {
+        const fetchChatList = async () => {
+            try {
+                const response = await fetch('http://10.0.2.2:8080/api/chatList');
+                const data = await response.json();
+                console.log('data는', data);
+                setChatListData(data);
+            } catch (error) {
+                console.error("Error fetching chat list:", error);
+            }
+        };
+        fetchChatList();
+    }, []);
 
     return (
         <>
@@ -22,12 +39,14 @@ function ChatList(){
                 <StyledConversations>Conversations</StyledConversations>
                     <StyledFlatList
                         data={chatListData} // chatListData를 데이터로 사용
-                        keyExtractor={(chat) => chat.chatID.toString()} // 각 아이템의 고유한 key
+                        keyExtractor={(chat) => chat.chatId.toString()} // 각 아이템의 고유한 key
                         renderItem={({ item, index }) => (
-                            <React.Fragment>
-                                <ConversationList chat={item} />
-                                {index < chatListData.length - 1 && <StyledConversationLine />}
-                            </React.Fragment>
+                            <TouchableOpacity onPress={() => showChatHistory(item.chatId, item.subject, item.summary)}>
+                                <React.Fragment>
+                                    <ConversationList chat={item} />
+                                    {index < chatListData.length - 1 && <StyledConversationLine />}
+                                </React.Fragment>
+                            </TouchableOpacity>
                         )}
                         contentContainerStyle={{ paddingBottom: 24 }}
                         dynamicHeight={flatListHeight}

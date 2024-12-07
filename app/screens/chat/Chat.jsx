@@ -11,7 +11,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 // WebSocket 주소 (스프링 부트 서버의 WebSocket 엔드포인트 URL)
-
 const WEBSOCKET_URL = "ws://10.0.2.2:8080/ws/voice";
 
 function Chat() {
@@ -163,6 +162,7 @@ function Chat() {
       console.log("WebSocket 객체가 null입니다. 초기화가 필요합니다.");
     }
   },[token]);
+
 
   return (
     <StyledView>
