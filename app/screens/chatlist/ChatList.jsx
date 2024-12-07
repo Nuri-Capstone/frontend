@@ -14,6 +14,10 @@ function ChatList(){
     const startNewChat = () => {
         navigation.navigate('Chat');
     };
+    
+    const showChatHistory = ( chatId, subject, summary ) => {
+        navigation.navigate('ChatHistory', { chatId, subject, summary });
+    };
 
     useEffect(() => {
         const fetchChatList = async () => {
@@ -37,10 +41,12 @@ function ChatList(){
                         data={chatListData} // chatListData를 데이터로 사용
                         keyExtractor={(chat) => chat.chatId.toString()} // 각 아이템의 고유한 key
                         renderItem={({ item, index }) => (
-                            <React.Fragment>
-                                <ConversationList chat={item} />
-                                {index < chatListData.length - 1 && <StyledConversationLine />}
-                            </React.Fragment>
+                            <TouchableOpacity onPress={() => showChatHistory(item.chatId, item.subject, item.summary)}>
+                                <React.Fragment>
+                                    <ConversationList chat={item} />
+                                    {index < chatListData.length - 1 && <StyledConversationLine />}
+                                </React.Fragment>
+                            </TouchableOpacity>
                         )}
                         contentContainerStyle={{ paddingBottom: 24 }}
                         dynamicHeight={flatListHeight}
