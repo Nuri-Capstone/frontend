@@ -20,7 +20,7 @@ function ChatHistory({ route }) {
         const fetchChatMessage = async () => {
             try {
                 console.log('채팅 아이디는  ',chatId);
-                const response = await fetch(`http://10.0.2.2:8080/api/chat/${chatId}`);
+                const response = await fetch(`http://10.0.2.2:8080/api/msg/${chatId}`);
                 const data = await response.json();
                 console.log('채팅 내역: ', data);
                 setMessages(data);
@@ -34,13 +34,10 @@ function ChatHistory({ route }) {
     return (
       <StyledView>
         <TitleSection>
-
             <BackButton onPress={showChatList}>
-            <Image source={require('../../assets/images/backButton.png')} style={{ width: 25, height: 25 }}/>
+              <Image source={require('../../assets/images/backButton.png')} style={{ width: 20, height: 20 }}/>
             </BackButton>
-        
-          <Header>{subject}</Header>
-
+            <Header>{summary}</Header>
         </TitleSection>
       <ChatSection>
         <ScrollView>
@@ -79,15 +76,13 @@ const StyledView = Styled.View`
 `;
 
 const Header = Styled.Text`
-  font-size: 25px;
+  font-size: 15px;
   font-weight: bold;
   text-align: center;
   padding-bottom: 20px;
   color: black;
   border-bottom-width: 1px;
   border-bottom-color: black;
-
-  
 `;
 
 const BackButton = Styled.TouchableOpacity`

@@ -3,13 +3,14 @@ import { Dimensions, Image, FlatList, TouchableOpacity } from 'react-native';
 import Styled from 'styled-components';
 import ConversationList from "../../components/ConversationList";
 import { useNavigation } from '@react-navigation/native'; 
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function ChatList(){
     const { height, width } = Dimensions.get('window');
     const flatListHeight = height * 0.58;
     const navigation = useNavigation(); 
     const [chatListData, setChatListData] = useState([]);
+    const [token, setToken] = useState(null);
 
     const startNewChat = () => {
         navigation.navigate("Chat", { newChat: true });
@@ -22,16 +23,38 @@ function ChatList(){
     useEffect(() => {
         const fetchChatList = async () => {
             try {
-                const response = await fetch('http://10.0.2.2:8080/api/chatList');
-                const data = await response.json();
+                const realToken = await AsyncStorage.getItem('userToken');
+                if (!realToken) {
+                    console.log('토큰이 없습니다!');
+                    return;
+                }
+            
+                console.log('토큰:', realToken);
+            
+                const headers = {
+                    'Authorization': `Bearer ${realToken}`, // 상태 대신 직접 사용
+                };
+            
+                const response = await fetch('http://10.0.2.2:8080/api/chatList', {
+                    method: 'GET',
+                    headers: headers,
+                });
+            
+                let data;
+                if (response.status === 200) {
+                    data = await response.json();
+                    console.log('데이터 가져오기 성공:', data);
+                    setChatListData(data); // 데이터 상태 업데이트
+                } else {
+                    console.log('오류 발생:', response.status, response.statusText);
+                }
                 console.log('data는', data);
-                setChatListData(data);
-            } catch (error) {
+            }catch (error) {
                 console.error("Error fetching chat list:", error);
             }
         };
         fetchChatList();
-    }, []);
+    }, [token]);
 
     return (
         <>
@@ -41,7 +64,7 @@ function ChatList(){
                         data={chatListData} // chatListData를 데이터로 사용
                         keyExtractor={(chat) => chat.chatId.toString()} // 각 아이템의 고유한 key
                         renderItem={({ item, index }) => (
-                            <TouchableOpacity onPress={() => showChatHistory(item.chatId, item.subject, item.summary)}>
+                            <TouchableOpacity onPress={() => showChatHistory(item.chatId, item.summary, item.summary)}>
                                 <React.Fragment>
                                     <ConversationList chat={item} />
                                     {index < chatListData.length - 1 && <StyledConversationLine />}
