@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Dimensions, Image, FlatList, TouchableOpacity } from 'react-native';
 import Styled from 'styled-components';
 import ConversationList from "../../components/ConversationList";
-import { useNavigation } from '@react-navigation/native'; 
+import { useNavigation, useFocusEffect } from '@react-navigation/native'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function ChatList(){
@@ -20,41 +20,45 @@ function ChatList(){
         navigation.navigate('ChatHistory', { chatId, subject, summary });
     };
 
-    useEffect(() => {
-        const fetchChatList = async () => {
-            try {
-                const realToken = await AsyncStorage.getItem('userToken');
-                if (!realToken) {
-                    console.log('토큰이 없습니다!');
-                    return;
-                }
-            
-                console.log('토큰:', realToken);
-            
-                const headers = {
-                    'Authorization': `Bearer ${realToken}`, // 상태 대신 직접 사용
-                };
-            
-                const response = await fetch('http://10.0.2.2:8080/api/chatList', {
-                    method: 'GET',
-                    headers: headers,
-                });
-            
-                let data;
-                if (response.status === 200) {
-                    data = await response.json();
-                    console.log('데이터 가져오기 성공:', data);
-                    setChatListData(data); // 데이터 상태 업데이트
-                } else {
-                    console.log('오류 발생:', response.status, response.statusText);
-                }
-                console.log('data는', data);
-            }catch (error) {
-                console.error("Error fetching chat list:", error);
+    const fetchChatList = async () => {
+        try {
+            const realToken = await AsyncStorage.getItem('userToken');
+            if (!realToken) {
+                console.log('토큰이 없습니다!');
+                return;
             }
-        };
-        fetchChatList();
-    }, [token]);
+        
+            console.log('토큰:', realToken);
+        
+            const headers = {
+                'Authorization': `Bearer ${realToken}`, // 상태 대신 직접 사용
+            };
+        
+            const response = await fetch('http://10.0.2.2:8080/api/chatList', {
+                method: 'GET',
+                headers: headers,
+            });
+        
+            let data;
+            if (response.status === 200) {
+                data = await response.json();
+                console.log('데이터 가져오기 성공:', data);
+                setChatListData(data); // 데이터 상태 업데이트
+            } else {
+                console.log('오류 발생:', response.status, response.statusText);
+            }
+            console.log('data는', data);
+        }catch (error) {
+            console.error("Error fetching chat list:", error);
+        }
+    };
+    
+    useFocusEffect(
+        React.useCallback(() => {
+            // 화면이 포커스를 받을 때마다 데이터를 가져옴
+            fetchChatList();
+        }, []) // 의존성 없음 -> 매번 새로 실행
+    );
 
     return (
         <>

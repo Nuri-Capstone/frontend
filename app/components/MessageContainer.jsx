@@ -11,6 +11,7 @@ function MessageContainer({ chat, ws }) {
       {msgType === "user" ? (
         <MessageContainers>
           <ImageAndTextSection>
+            {/* <ProfileImage source={require('../assets/images/userImg.png')} /> */}
             <MessageContentUser>
                 <UserTextBox>
                     <UserText>{msgText}</UserText>
@@ -41,7 +42,7 @@ const ImageAndTextSection = Styled.View`
 `;
 const ButtonSection = Styled.View`
   flex-direction: row-reverse; 
-  margin-right: 35px;
+
 `;
 
 const MessageContainers = Styled.View`
