@@ -7,8 +7,10 @@ import {defaultFeedback} from "../../mock-data/monthlyFeedbackData";
 
 import { Dimensions } from "react-native";
 import { LineChart } from "react-native-chart-kit";
+import { useFocusEffect } from '@react-navigation/native'; 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-function Home(){
+function Home() {
     const [userRanking, setUserRanking] = useState(null);
     const [totalUsers, setTotalUsers] = useState(null);
     const [selectedYear, setSelectedYear] = useState(2024);
@@ -16,7 +18,7 @@ function Home(){
     const [currentFeedback, setCurrentFeedback] = useState(defaultFeedback);
 
     const [msgCnt, setMsgCnt] = useState({
-        labels: [],
+        labels: [0],
         datasets: [
             {
                 data: [0],
@@ -27,27 +29,35 @@ function Home(){
         legend: ["대화 수 랭킹"]
     });
 
+    const [token, setToken] = useState(null);
+
     const fetchRanking = async () => {
-        const userId = 148;
+        const realToken = await AsyncStorage.getItem('userToken');
+        if (!realToken) {
+            console.log('토큰이 없습니다!');
+            return;
+        }
+
+        console.log('토큰: ', realToken);
+
+        const headers = {
+            'Authorization' : `Bearer ${realToken}`
+        };
 
         const allUserResponse = await fetch('http://10.0.2.2:8080/home/ranking/allUsers', {
             method: "GET",
-            headers: {
-                "Content-type" : "application/json",
-                "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM2NTIzMTB9.TELabgTVvWLVlY-NvZXVee4eRDEemYb-liva6D1FQeU`
-            },
+            headers: headers
         });
+
         const allUserData = await allUserResponse.json();
 
         setTotalUsers(allUserData);
 
-        const userRankingResponse = await fetch(`http://10.0.2.2:8080/home/ranking/${userId}`, {
+        const userRankingResponse = await fetch(`http://10.0.2.2:8080/home/ranking`, {
             method: "GET",
-            headers: {
-                "Content-type" : "application/json",
-                "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM2NTIzMTB9.TELabgTVvWLVlY-NvZXVee4eRDEemYb-liva6D1FQeU`
-            },
+            headers: headers
         });
+
         const userRankingData = await userRankingResponse.json();
         console.log("userRankingData" + userRankingData);
 
@@ -56,19 +66,29 @@ function Home(){
 
     const fetchData = async () => {
         try {
-            const userId = 148;
-            const response = await fetch(`http://10.0.2.2:8080/home/graph/${userId}`, {
+
+            const realToken = await AsyncStorage.getItem('userToken');
+            if (!realToken) {
+                console.log('토큰이 없습니다!');
+                return;
+            }
+
+            console.log('토큰: ', realToken);
+
+            const headers = {
+                'Authorization' : `Bearer ${realToken}`
+            };
+            
+            const response = await fetch(`http://10.0.2.2:8080/home/graph`, {
                 method: "GET",
-                headers: {
-                    "Content-type" : "application/json",
-                    "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM2NTIzMTB9.TELabgTVvWLVlY-NvZXVee4eRDEemYb-liva6D1FQeU`
-                },
+                headers: headers
             });
+
             const data = await response.json();
     
             if (data && typeof data === "object") {
                 const date = [];
-                const numOfMessage = [];
+                const numOfMessage = [0];
 
                 Object.keys(data).forEach((key) => {
                     // 날짜를 '23/12/01' 형식으로 변환
@@ -130,15 +150,23 @@ function Home(){
 
     const fetchMonthlyFeedback = async (year, month) => {
         try {
-            const userId = 148;       // 이후 실제 userID로 넣어야 함
-            console.log("userId: " + userId);
-            console.log("month: " + month);
-            const response = await fetch(`http://10.0.2.2:8080/home/monthlyFeedback/${userId}/${year}/${month}`, {
+
+            const realToken = await AsyncStorage.getItem('userToken');
+            if (!realToken) {
+                console.log('토큰이 없습니다!');
+                return;
+            }
+
+            console.log('토큰: ', realToken);
+
+            const headers = {
+                'Authorization' : `Bearer ${realToken}`
+            };
+        
+
+            const response = await fetch(`http://10.0.2.2:8080/home/monthlyFeedback/${year}/${month}`, {
                 method: "GET",
-                headers: {
-                    "Content-type" : "application/json",
-                    "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM2NTIzMTB9.TELabgTVvWLVlY-NvZXVee4eRDEemYb-liva6D1FQeU`
-                },
+                headers: headers
             });
 
             console.log(response);
@@ -170,8 +198,17 @@ function Home(){
         fetchMonthlyFeedback(selectedYear, selectedMonth);
     }, [selectedYear, selectedMonth]);
 
+    useFocusEffect(
+        React.useCallback(() => {
+            // 화면이 포커스를 받을 때마다 데이터를 가져옴
+            fetchRanking();
+            fetchData();
+        }, []) // 의존성 없음 -> 매번 새로 실행
+    );
+
 
     const screenWidth = Dimensions.get("window").width;
+
 
     return (
         <StyledView>
@@ -190,6 +227,8 @@ function Home(){
                     
                     yAxisSuffix="개"
                     yAxisInterval={10}
+                    yAxisMin={0} // y축의 최소값
+                    yAxisMax={100}
 
                     chartConfig={{
                         backgroundGradientFrom: "white",
@@ -325,7 +364,7 @@ const StyledSummaryMonth = Styled.Text`
 
 const StyledSwiperContainer = Styled.View`
     flex: 1;
-    min-height: 250px;
+    min-height: 251px;
 `;
 
 const StyledFeedbackCard = Styled.View`
