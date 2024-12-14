@@ -10,6 +10,7 @@ import { LineChart } from "react-native-chart-kit";
 import { useFocusEffect } from '@react-navigation/native'; 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+
 function Home() {
     const [userRanking, setUserRanking] = useState(null);
     const [totalUsers, setTotalUsers] = useState(null);

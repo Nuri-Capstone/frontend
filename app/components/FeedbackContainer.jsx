@@ -58,6 +58,12 @@ function FeedbackContainer({ msgText, msgId, ws }) {
                     }));
                     
                     console.log("피드백: ", data);
+
+                    // 로딩 상태 제거
+                    setLoadingStates((prev) => ({
+                        ...prev,
+                        [option]: false,
+                    }));
                 };
             } else {
                 throw new Error("WebSocket 연결 실패");
@@ -69,7 +75,7 @@ function FeedbackContainer({ msgText, msgId, ws }) {
                 ...prev,
                 [option]: "요청 중 오류가 발생했습니다.",
             }));
-        } finally {
+        
             setLoadingStates((prev) => ({
                 ...prev,
                 [option]: false,

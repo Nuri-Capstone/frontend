@@ -34,10 +34,15 @@ function ChatHistory({ route }) {
     return (
       <StyledView>
         <TitleSection>
-            <BackButton onPress={showChatList}>
-              <Image source={require('../../assets/images/backButton.png')} style={{ width: 20, height: 20 }}/>
+          <BackButton >
+            <TouchableOpacity onPress={showChatList}>
+            
+            <Image source={require('../../assets/images/backButton.png')} style={{ width: 25, height: 25 }}/>
+            
+            </TouchableOpacity>
             </BackButton>
-            <Header>{summary}</Header>
+          <Header>{subject}</Header>
+
         </TitleSection>
       <ChatSection>
         <ScrollView>
@@ -76,7 +81,7 @@ const StyledView = Styled.View`
 `;
 
 const Header = Styled.Text`
-  font-size: 15px;
+  font-size: 20px;
   font-weight: bold;
   text-align: center;
   padding-bottom: 20px;
@@ -85,7 +90,7 @@ const Header = Styled.Text`
   border-bottom-color: black;
 `;
 
-const BackButton = Styled.TouchableOpacity`
+const BackButton = Styled.View`
   top: 33px;
   left: 10px;
 `;
