@@ -8,8 +8,10 @@ import {defaultFeedback} from "../../mock-data/monthlyFeedbackData";
 import { Dimensions } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { useFocusEffect } from '@react-navigation/native'; 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-function Home(){
+
+function Home() {
     const [userRanking, setUserRanking] = useState(null);
     const [totalUsers, setTotalUsers] = useState(null);
     const [selectedYear, setSelectedYear] = useState(2024);
@@ -28,27 +30,35 @@ function Home(){
         legend: ["대화 수 랭킹"]
     });
 
+    const [token, setToken] = useState(null);
+
     const fetchRanking = async () => {
-        const userId = 264;
+        const realToken = await AsyncStorage.getItem('userToken');
+        if (!realToken) {
+            console.log('토큰이 없습니다!');
+            return;
+        }
+
+        console.log('토큰: ', realToken);
+
+        const headers = {
+            'Authorization' : `Bearer ${realToken}`
+        };
 
         const allUserResponse = await fetch('http://10.0.2.2:8080/home/ranking/allUsers', {
             method: "GET",
-            headers: {
-                "Content-type" : "application/json",
-                "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM3Mzg5Njl9.LxZDKEQvvwq_LweG4vVnsRaXt0E8utKG1k4rB2K5vd0`
-            },
+            headers: headers
         });
+
         const allUserData = await allUserResponse.json();
 
         setTotalUsers(allUserData);
 
-        const userRankingResponse = await fetch(`http://10.0.2.2:8080/home/ranking/${userId}`, {
+        const userRankingResponse = await fetch(`http://10.0.2.2:8080/home/ranking`, {
             method: "GET",
-            headers: {
-                "Content-type" : "application/json",
-                "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM3Mzg5Njl9.LxZDKEQvvwq_LweG4vVnsRaXt0E8utKG1k4rB2K5vd0`
-            },
+            headers: headers
         });
+
         const userRankingData = await userRankingResponse.json();
         console.log("userRankingData" + userRankingData);
 
@@ -57,15 +67,24 @@ function Home(){
 
     const fetchData = async () => {
         try {
-            const userId = 264;
+
+            const realToken = await AsyncStorage.getItem('userToken');
+            if (!realToken) {
+                console.log('토큰이 없습니다!');
+                return;
+            }
+
+            console.log('토큰: ', realToken);
+
+            const headers = {
+                'Authorization' : `Bearer ${realToken}`
+            };
             
-            const response = await fetch(`http://10.0.2.2:8080/home/graph/${userId}`, {
+            const response = await fetch(`http://10.0.2.2:8080/home/graph`, {
                 method: "GET",
-                headers: {
-                    "Content-type" : "application/json",
-                    "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM3Mzg5Njl9.LxZDKEQvvwq_LweG4vVnsRaXt0E8utKG1k4rB2K5vd0`
-                },
+                headers: headers
             });
+
             const data = await response.json();
     
             if (data && typeof data === "object") {
@@ -132,15 +151,23 @@ function Home(){
 
     const fetchMonthlyFeedback = async (year, month) => {
         try {
-            const userId = 264;       // 이후 실제 userID로 넣어야 함
-            console.log("userId: " + userId);
-            console.log("month: " + month);
-            const response = await fetch(`http://10.0.2.2:8080/home/monthlyFeedback/${userId}/${year}/${month}`, {
+
+            const realToken = await AsyncStorage.getItem('userToken');
+            if (!realToken) {
+                console.log('토큰이 없습니다!');
+                return;
+            }
+
+            console.log('토큰: ', realToken);
+
+            const headers = {
+                'Authorization' : `Bearer ${realToken}`
+            };
+        
+
+            const response = await fetch(`http://10.0.2.2:8080/home/monthlyFeedback/${year}/${month}`, {
                 method: "GET",
-                headers: {
-                    "Content-type" : "application/json",
-                    "Authorization" : `Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYWFAYWFhLmFhYSIsImF1dGgiOiJST0xFX1VTRVIiLCJleHAiOjE3MzM3Mzg5Njl9.LxZDKEQvvwq_LweG4vVnsRaXt0E8utKG1k4rB2K5vd0`
-                },
+                headers: headers
             });
 
             console.log(response);
